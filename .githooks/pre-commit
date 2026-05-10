@@ -24,7 +24,7 @@ if [ -n "$XLSX_CHANGED" ]; then
     echo "Excel changed — regenerating CSVs..."
     while IFS= read -r xlsx; do
         [ -z "$xlsx" ] && continue
-        $PYTHON excel_to_csv.py "$xlsx"
+        $PYTHON config_files/excel_to_csv.py "$xlsx"
         folder="${xlsx%.xlsx}"
         git add "$folder/"
     done <<< "$XLSX_CHANGED"
@@ -35,7 +35,7 @@ if [ -n "$CSV_CHANGED" ]; then
     folders=$(echo "$CSV_CHANGED" | xargs -I{} dirname {} | sort -u)
     while IFS= read -r folder; do
         [ -z "$folder" ] && continue
-        $PYTHON csv_to_excel.py "$folder"
+        $PYTHON config_files/csv_to_excel.py "$folder"
         git add "${folder}.xlsx"
     done <<< "$folders"
 fi
