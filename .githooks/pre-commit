@@ -40,4 +40,8 @@ if [ -n "$CSV_CHANGED" ]; then
     done <<< "$folders"
 fi
 
+if [ -z "$XLSX_CHANGED" ] && [ -z "$CSV_CHANGED" ]; then
+    echo "No database changes detected."
+fi
+
 exit 0
