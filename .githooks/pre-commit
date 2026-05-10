@@ -1,0 +1,43 @@
+#!/bin/bash
+set -e
+
+REPO_ROOT=$(git rev-parse --show-toplevel)
+cd "$REPO_ROOT"
+
+if [ -f ".venv/bin/python" ]; then
+    PYTHON=".venv/bin/python"
+else
+    PYTHON="python3"
+fi
+
+STAGED=$(git diff --cached --name-only)
+
+XLSX_CHANGED=$(echo "$STAGED" | grep -E '\.xlsx$' || true)
+CSV_CHANGED=$(echo "$STAGED" | grep -E '\.csv$' || true)
+
+if [ -n "$XLSX_CHANGED" ] && [ -n "$CSV_CHANGED" ]; then
+    echo "commit not accepted: both Excel and CSV files are staged simultaneously."
+    exit 1
+fi
+
+if [ -n "$XLSX_CHANGED" ]; then
+    echo "Excel changed — regenerating CSVs..."
+    while IFS= read -r xlsx; do
+        [ -z "$xlsx" ] && continue
+        $PYTHON excel_to_csv.py "$xlsx"
+        folder="${xlsx%.xlsx}"
+        git add "$folder/"
+    done <<< "$XLSX_CHANGED"
+fi
+
+if [ -n "$CSV_CHANGED" ]; then
+    echo "CSVs changed — regenerating Excel..."
+    folders=$(echo "$CSV_CHANGED" | xargs -I{} dirname {} | sort -u)
+    while IFS= read -r folder; do
+        [ -z "$folder" ] && continue
+        $PYTHON csv_to_excel.py "$folder"
+        git add "${folder}.xlsx"
+    done <<< "$folders"
+fi
+
+exit 0
