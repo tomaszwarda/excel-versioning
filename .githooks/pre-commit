@@ -12,8 +12,8 @@ fi
 
 STAGED=$(git diff --cached --name-only)
 
-XLSX_CHANGED=$(echo "$STAGED" | grep -E '\.xlsx$' || true)
-CSV_CHANGED=$(echo "$STAGED" | grep -E '\.csv$' || true)
+XLSX_CHANGED=$(echo "$STAGED" | grep -E '^database\.xlsx$' || true)
+CSV_CHANGED=$(echo "$STAGED" | grep -E '^database/.*\.csv$' || true)
 
 if [ -n "$XLSX_CHANGED" ] && [ -n "$CSV_CHANGED" ]; then
     echo "commit not accepted: both Excel and CSV files are staged simultaneously."
