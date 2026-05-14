@@ -1,37 +1,40 @@
 ```mermaid
 flowchart TD
-    A([git commit]) --> B[pre-commit hook]
+    START([git commit]) --> HOOK
 
-    B --> C[get staged files\ngit diff --cached]
-    C --> D{database.xlsx\nchanged?}
-    C --> E{database/*.csv\nchanged?}
+    subgraph HOOK[pre-commit hook]
+        GET[get staged files] --> CHECK{what changed?}
+    end
 
-    D -- yes --> F[XLSX_CHANGED]
-    D -- no --> G[empty]
-    E -- yes --> H[CSV_CHANGED]
-    E -- no --> I[empty]
+    CHECK -- both --> BLOCK([❌ commit not accepted])
 
-    F & H --> J{both set?}
-    J -- yes --> K([exit 1\ncommit not accepted])
+    CHECK -- only database.xlsx --> E2C
 
-    J -- no --> L{only XLSX?}
-    L -- yes --> M[excel_to_csv.py]
-    M --> M1[open database.xlsx]
-    M1 --> M2[iterate sheets]
-    M2 --> M3[write sheet → database/sheet.csv]
-    M3 --> M4[git add database/]
-    M4 --> Z
+    subgraph E2C[excel_to_csv.py]
+        direction TB
+        E1[open database.xlsx]
+        E2[iterate sheets]
+        E3[write each sheet → database/sheet.csv]
+        E1 --> E2 --> E3
+    end
 
-    J -- no --> N{only CSV?}
-    N -- yes --> O[csv_to_excel.py]
-    O --> O1[open database/ folder]
-    O1 --> O2[iterate *.csv files]
-    O2 --> O3[write CSV → sheet in database.xlsx]
-    O3 --> O4[git add database.xlsx]
-    O4 --> Z
+    E2C --> ADD_CSV[git add database/]
+    ADD_CSV --> DONE
 
-    G & I --> P{neither changed?}
-    P -- yes --> Q([No database changes detected])
+    CHECK -- only database/*.csv --> C2E
 
-    Z([commit proceeds])
+    subgraph C2E[csv_to_excel.py]
+        direction TB
+        C1[open database/ folder]
+        C2[iterate *.csv files]
+        C3[write each CSV → sheet in database.xlsx]
+        C1 --> C2 --> C3
+    end
+
+    C2E --> ADD_XL[git add database.xlsx]
+    ADD_XL --> DONE
+
+    CHECK -- neither --> NO_CHANGE([ℹ️ no database changes detected])
+
+    DONE([✅ commit proceeds])
 ```
